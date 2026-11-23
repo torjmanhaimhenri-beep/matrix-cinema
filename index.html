@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080808">
+<title>MATRIX</title>
+<style>
+:root{--red:#e50914;--bg:#080808;--panel:#171717;--muted:#aaa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:Arial,sans-serif}
+header{padding:22px 18px;background:#050505;border-bottom:1px solid #292929;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.brand{font-size:30px;font-weight:900;letter-spacing:3px;color:var(--red)}
+header select{max-width:190px}
+main{max-width:900px;margin:28px auto;padding:0 16px}
+h1{font-size:25px;margin:0 0 8px}
+p{color:#ccc;line-height:1.5}
+.panel{background:var(--panel);border:1px solid #292929;border-radius:14px;padding:18px;margin:18px 0}
+input,select{width:100%;padding:13px;margin:7px 0;border:1px solid #444;border-radius:8px;background:#242424;color:#fff;font-size:16px}
+button{padding:13px 16px;border:0;border-radius:8px;background:var(--red);color:#fff;font-weight:bold;font-size:16px;cursor:pointer}
+button.secondary{background:#393939}
+button.danger{background:#5b2020}
+button:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:9px;flex-wrap:wrap}
+.actions button{flex:1}
+.player{margin-top:16px;background:#000;border-radius:10px;overflow:hidden;min-height:180px;display:flex;align-items:center;justify-content:center}
+video,iframe{display:block;width:100%;aspect-ratio:16/9;border:0;background:#000}
+#screen>p{padding:25px;text-align:center;color:#aaa}
+#message{color:#ffc46b;min-height:24px}
+.movie{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #333}
+.movie:last-child{border-bottom:0}
+.movie-info{min-width:0;text-align:start}
+.movie-info strong{display:block;overflow-wrap:anywhere}
+.movie-info small{color:#aaa}
+.movie button{flex:0 0 auto;padding:9px 12px;font-size:14px}
+.note{font-size:13px;color:#aaa}
+footer{text-align:center;color:#777;padding:25px}
+@media(max-width:520px){header{justify-content:center}.movie{align-items:flex-start}.movie button{max-width:100px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">MATRIX</div>
+  <select id="uiLanguage" aria-label="Interface language"></select>
+</header>
+<main>
+  <section>
+    <h1 id="welcome">ברוכים הבאים ל־MATRIX</h1>
+    <p id="intro">הוסף קישור לסרטון ממקור נתמך, ושמור אותו בספרייה שלך.</p>
+  </section>
+
+  <section class="panel">
+    <h2 id="addTitle">הוסף סרט</h2>
+    <input id="movieName" type="text" placeholder="שם הסרט">
+    <input id="videoUrl" type="url" placeholder="הדבק קישור מ־YouTube, Drive או מקור אחר">
+    <select id="movieLanguage" aria-label="Movie language">
+      <option value="he">עברית</option><option value="en">English</option>
+      <option value="fr">Français</option><option value="es">Español</option>
+      <option value="ar">العربية</option><option value="de">Deutsch</option>
+      <option value="it">Italiano</option><option value="pt">Português</option>
+      <option value="ru">Русский</option><option value="tr">Türkçe</option>
+      <option value="ja">日本語</option><option value="ko">한국어</option>
+      <option value="zh">中文</option><option value="nl">Nederlands</option>
+      <option value="pl">Polski</option><option value="uk">Українська</option>
+      <option value="hi">हिन्दी</option><option value="el">Ελληνικά</option>
+      <option value="sv">Svenska</option><option value="ro">Română</option>
+    </select>
+    <div class="actions">
+      <button id="addButton" onclick="addMovie()">＋ הוסף לספרייה</button>
+      <button class="secondary" id="playButton" onclick="playEntered()">▶ הפעל קישור</button>
+    </div>
+    <p class="note" id="sourceNote">מקורות: YouTube, Google Drive, Kopoti וקישורי וידאו ישירים. קישורים אחרים יפעלו רק אם האתר מאפשר הטמעה.</p>
+    <p id="message" role="status"></p>
+  </section>
+
+  <section class="panel">
+    <h2 id="playerTitle">נגן MATRIX</h2>
+    <div class="player"><div id="screen"><p id="emptyPlayer">הסרטון יופיע כאן לאחר בחירת קישור</p></div></div>
+  </section>
+
+  <section class="panel">
+    <h2 id="libraryTitle">הספרייה שלי</h2>
+    <input id="search" type="search" placeholder="חיפוש בספרייה..." oninput="renderLibrary()">
+    <div id="library"></div>
+    <p class="note" id="storageNote">הספרייה נשמרת במכשיר ובדפדפן הזה. מחיקת נתוני הדפדפן עלולה למחוק אותה.</p>
+  </section>
+</main>
+<footer>MATRIX</footer>
+<script>
+const translations = {
+he:{welcome:"ברוכים הבאים ל־MATRIX",intro:"הוסף קישור לסרטון ממקור נתמך, ושמור אותו בספרייה שלך.",addTitle:"הוסף סרט",name:"שם הסרט",url:"הדבק קישור מ־YouTube, Drive או מקור אחר",add:"＋ הוסף לספרייה",play:"▶ הפעל קישור",source:"מקורות: YouTube, Google Drive, Kopoti וקישורי וידאו ישירים. קישורים אחרים יפעלו רק אם האתר מאפשר הטמעה.",player:"נגן MATRIX",empty:"הסרטון יופיע כאן לאחר בחירת קישור",library:"הספרייה שלי",search:"חיפוש בספרייה...",storage:"הספרייה נשמרת במכשיר ובדפדפן הזה. מחיקת נתוני הדפדפן עלולה למחוק אותה.",need:"נא למלא שם וקישור.",invalid:"הקישור אינו תקין. יש להשתמש בקישור שמתחיל ב־http או https.",saved:"הסרט נוסף לספרייה.",remove:"מחק",unsupported:"האתר הזה עשוי לחסום הפעלה בתוך MATRIX. נסה קישור שיתוף או קישור וידאו ישיר.",emptyLibrary:"עדיין לא הוספת סרטים.",language:"שפה"},
+en:{welcome:"Welcome to MATRIX",intro:"Add a video link from a supported source and save it to your library.",addTitle:"Add a movie",name:"Movie title",url:"Paste a YouTube, Drive, or other link",add:"＋ Add to library",play:"▶ Play link",source:"Sources: YouTube, Google Drive, Kopoti and direct video links. Other links work only when embedding is allowed.",player:"MATRIX Player",empty:"Your video will appear here after you choose a link",library:"My library",search:"Search library...",storage:"Your library is saved in this browser on this device. Clearing browser data may erase it.",need:"Please enter a title and a link.",invalid:"Invalid link. Use an http or https address.",saved:"Movie added to your library.",remove:"Delete",unsupported:"This site may block playback inside MATRIX. Try a share link or direct video link.",emptyLibrary:"You haven't added any movies yet.",language:"Language"},
+fr:{welcome:"Bienvenue sur MATRIX",intro:"Ajoutez un lien vidéo d’une source compatible et enregistrez-le dans votre bibliothèque.",addTitle:"Ajouter un film",name:"Titre du film",url:"Collez un lien YouTube, Drive ou autre",add:"＋ Ajouter",play:"▶ Lire le lien",source:"Sources : YouTube, Google Drive et liens vidéo directs. Les autres liens dépendent de l’autorisation d’intégration.",player:"Lecteur MATRIX",empty:"La vidéo apparaîtra ici après le choix d’un lien",library:"Ma bibliothèque",search:"Rechercher...",storage:"La bibliothèque est enregistrée dans ce navigateur sur cet appareil.",need:"Veuillez saisir un titre et un lien.",invalid:"Lien invalide. Utilisez une adresse http ou https.",saved:"Film ajouté à la bibliothèque.",remove:"Supprimer",unsupported:"Ce site peut bloquer la lecture intégrée.",emptyLibrary:"Aucun film pour le moment.",language:"Langue"},
+es:{welcome:"Bienvenido a MATRIX",intro:"Añade un enlace de vídeo de una fuente compatible y guárdalo en tu biblioteca.",addTitle:"Añadir película",name:"Título de la película",url:"Pega un enlace de YouTube, Drive u otro",add:"＋ Añadir a la biblioteca",play:"▶ Reproducir enlace",source:"Fuentes: YouTube, Google Drive y enlaces directos de vídeo. Otros enlaces dependen de los permisos de inserción.",player:"Reproductor MATRIX",empty:"El vídeo aparecerá aquí al elegir un enlace",library:"Mi biblioteca",search:"Buscar...",storage:"La biblioteca se guarda en este navegador y dispositivo.",need:"Introduce un título y un enlace.",invalid:"Enlace no válido. Usa una dirección http o https.",saved:"Película añadida.",remove:"Eliminar",unsupported:"Este sitio puede bloquear la reproducción integrada.",emptyLibrary:"Todavía no hay películas.",language:"Idioma"}
+};
+const languageNames = [["he","עברית"],["en","English"],["fr","Français"],["es","Español"],["ar","العربية"],["de","Deutsch"],["it","Italiano"],["pt","Português"],["ru","Русский"],["tr","Türkçe"],["ja","日本語"],["ko","한국어"],["zh","中文"],["nl","Nederlands"],["pl","Polski"],["uk","Українська"],["hi","हिन्दी"],["el","Ελληνικά"],["sv","Svenska"],["ro","Română"]];
+const ui = document.getElementById("uiLanguage");
+languageNames.forEach(([code,name])=>ui.add(new Option(name,code)));
+let currentLanguage = localStorage.getItem("matrixUiLanguage") || "he";
+ui.value = currentLanguage;
+function t(key){return (translations[currentLanguage]||translations.en)[key] || translations.en[key] || translations.he[key] || key}
+function applyLanguage(){
+ currentLanguage=ui.value;localStorage.setItem("matrixUiLanguage",currentLanguage);
+ const rtl=["he","ar"].includes(currentLanguage);document.documentElement.lang=currentLanguage;document.documentElement.dir=rtl?"rtl":"ltr";
+ const map={welcome:"welcome",intro:"intro",addTitle:"addTitle",addButton:"add",playButton:"play",sourceNote:"source",playerTitle:"player",emptyPlayer:"empty",libraryTitle:"library",search:"search",storageNote:"storage"};
+ Object.entries(map).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.textContent=t(key)});
+ document.getElementById("movieName").placeholder=t("name");document.getElementById("videoUrl").placeholder=t("url");
+ document.getElementById("search").placeholder=t("search");
+}
+ui.addEventListener("change",applyLanguage);applyLanguage();
+
+function getMovies(){try{return JSON.parse(localStorage.getItem("matrixMovies")||"[]")}catch{return []}}
+function saveMovies(items){localStorage.setItem("matrixMovies",JSON.stringify(items))}
+function getEmbed(url){
+ const u=new URL(url);const host=u.hostname.replace(/^www\./,"").toLowerCase();
+ if(host==="youtu.be"){const id=u.pathname.split("/").filter(Boolean)[0];if(id)return {type:"iframe",src:"https://www.youtube-nocookie.com/embed/"+encodeURIComponent(id)}}
+ if(host==="youtube.com"||host==="m.youtube.com"||host==="music.youtube.com"){
+  let id=u.searchParams.get("v");
+  if(!id&&u.pathname.startsWith("/shorts/"))id=u.pathname.split("/")[2];
+  if(!id&&u.pathname.startsWith("/embed/"))id=u.pathname.split("/")[2];
+  if(id)return {type:"iframe",src:"https://www.youtube-nocookie.com/embed/"+encodeURIComponent(id)};
+ }
+ if(host==="kopoti.fr" || host.endsWith(".kopoti.fr"))return {type:"iframe",src:u.href,source:"Kopoti"};
+ if(host==="drive.google.com"){
+  const match=u.pathname.match(/\/file\/d\/([^/]+)/);
+  const id=match?match[1]:u.searchParams.get("id");
+  if(id)return {type:"iframe",src:"https://drive.google.com/file/d/"+encodeURIComponent(id)+"/preview"};
+ }
+ if(/\.(mp4|webm|ogg|m4v)(\?.*)?$/i.test(u.pathname))return {type:"video",src:u.href};
+ return {type:"iframe",src:u.href};
+}
+function showUrl(raw){
+ const screen=document.getElementById("screen"),message=document.getElementById("message");
+ let u;try{u=new URL(raw);if(!["https:","http:"].includes(u.protocol))throw 0}catch{message.textContent=t("invalid");return}
+ const media=getEmbed(u.href);screen.replaceChildren();
+ if(media.type==="video"){const v=document.createElement("video");v.src=media.src;v.controls=true;v.playsInline=true;screen.appendChild(v)}
+ else{const f=document.createElement("iframe");f.src=media.src;f.allow="autoplay; fullscreen; picture-in-picture; encrypted-media";f.allowFullscreen=true;f.referrerPolicy="strict-origin-when-cross-origin";screen.appendChild(f)}
+ message.textContent="";
+}
+function playEntered(){const url=document.getElementById("videoUrl").value.trim();if(!url){document.getElementById("message").textContent=t("need");return}showUrl(url)}
+function addMovie(){
+ const name=document.getElementById("movieName").value.trim(),url=document.getElementById("videoUrl").value.trim(),lang=document.getElementById("movieLanguage").value,msg=document.getElementById("message");
+ if(!name||!url){msg.textContent=t("need");return}
+ try{const u=new URL(url);if(!["https:","http:"].includes(u.protocol))throw 0}catch{msg.textContent=t("invalid");return}
+ const movies=getMovies();movies.unshift({id:Date.now().toString(),name,url,lang,added:new Date().toISOString()});saveMovies(movies);msg.textContent=t("saved");
+ document.getElementById("movieName").value="";renderLibrary();
+}
+function renderLibrary(){
+ const root=document.getElementById("library"),q=document.getElementById("search").value.trim().toLowerCase(),movies=getMovies().filter(m=>(m.name+" "+m.lang).toLowerCase().includes(q));root.replaceChildren();
+ if(!movies.length){const p=document.createElement("p");p.textContent=t("emptyLibrary");root.appendChild(p);return}
+ movies.forEach(m=>{
+  const row=document.createElement("div");row.className="movie";
+  const info=document.createElement("div");info.className="movie-info";
+  const title=document.createElement("strong");title.textContent=m.name;
+  const sub=document.createElement("small");sub.textContent=languageNames.find(x=>x[0]===m.lang)?.[1]||m.lang;
+  info.append(title,sub);
+  const actions=document.createElement("div");actions.className="actions";
+  const play=document.createElement("button");play.textContent="▶";play.title="Play";play.onclick=()=>{document.getElementById("videoUrl").value=m.url;showUrl(m.url);window.scrollTo({top:0,behavior:"smooth"})};
+  const del=document.createElement("button");del.className="danger";del.textContent=t("remove");del.onclick=()=>{saveMovies(getMovies().filter(x=>x.id!==m.id));renderLibrary()};
+  actions.append(play,del);row.append(info,actions);root.appendChild(row);
+ });
+}
+renderLibrary();
+</script>
+</body>
+</html>
